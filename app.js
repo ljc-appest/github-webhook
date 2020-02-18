@@ -20,15 +20,61 @@ handler.on('error', function (err) {
   console.error('Error:', err.message)
 })
 
+handler.on('pull_request_review', function (event) {
+
+    var url = event.payload.pull_request.html_url
+    var action = event.payload.action
+    var user = event.payload.sender.login
+    var sender = event.payload.sender.login
+    var desc = event.payload.review.body
+    .split('\n')
+    .map((val)=>{  
+        return "> " + val; 
+    })
+    .join('\n')
+
+    var path = require('url').parse(url).pathname   
+
+    var review_url = event.payload.review.html_url
+    content = `
+A [review](${review_url}) ${action} by ${user} to [${path}](${url})\n
+⠀\n
+> ${desc}
+`;
+
+    var payload = {
+        "msgtype": "markdown",
+        "markdown": {
+          "content": content
+        }
+    };
+
+    request({
+        url: "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=e3a930c9-c4dd-44e6-981e-a1d1e9a434ca",
+        method: "POST",
+        json: true,
+        body: payload
+    }, function (error, response, body){
+        console.log(error);
+        console.log(response);
+    });
+
+})
+
 handler.on('pull_request', function (event) {
 
     var url = event.payload.pull_request.html_url
     var action = event.payload.action
-    var user = event.payload.pull_request.user.login
+    var user = event.payload.sender.login
     var from = event.payload.pull_request.head.label
     var to = event.payload.pull_request.base.label
-    var desc = event.payload.pull_request.body
     var merged = event.payload.pull_request.merged
+    var desc = event.payload.pull_request.body
+    .split('\n')
+    .map((val)=>{  
+        return "> " + val; 
+    })
+    .join('\n')
 
     var path = require('url').parse(url).pathname    
 
@@ -82,3 +128,4 @@ handler.on('pull_request', function (event) {
     });
 
 })
+
